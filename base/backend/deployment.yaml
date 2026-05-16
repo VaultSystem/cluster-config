@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-backend-deployment
+  labels:
+    app: vault
+    tier: backend
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  selector:
+    matchLabels:
+      app: vault-backend
+  template:
+    metadata:
+      name: vault-backend
+      labels:
+        app: vault-backend
+    spec:
+      containers:
+        - name: vault-backend
+          image: { IMAGE }
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: backend-secrets
+          livenessProbe:
+            httpGet:
+              port: 8000
+              path: /healthz
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+
+      restartPolicy: Always
+
+
+
